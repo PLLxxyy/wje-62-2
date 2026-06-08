@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import type { AppStatus, AppSettings, ImageInfo } from '@/types';
+import type { AppStatus, AppSettings, ImageInfo, HistoryItem } from '@/types';
+
+const MAX_HISTORY = 20;
 
 interface AppState {
   image: HTMLImageElement | null;
@@ -10,6 +12,8 @@ interface AppState {
   status: AppStatus;
   errorMessage: string | null;
   previewLines: string[];
+  history: HistoryItem[];
+  activeHistoryId: string | null;
 
   setImage: (image: HTMLImageElement | null) => void;
   setImageData: (data: ImageData | null) => void;
@@ -19,6 +23,10 @@ interface AppState {
   setStatus: (status: AppStatus) => void;
   setErrorMessage: (message: string | null) => void;
   setPreviewLines: (lines: string[]) => void;
+  addHistory: (item: Omit<HistoryItem, 'id' | 'timestamp'>) => void;
+  selectHistory: (id: string | null) => void;
+  deleteHistory: (id: string) => void;
+  clearHistory: () => void;
   reset: () => void;
 }
 
@@ -29,7 +37,16 @@ const defaultSettings: AppSettings = {
   invert: false,
 };
 
-export const useAppStore = create<AppState>((set) => ({
+const generateId = () =>
+  Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+const generateThumbnail = (lines: string[]): string => {
+  const previewLines = lines.slice(0, 8);
+  const maxLen = Math.min(30, ...previewLines.map((l) => l.length));
+  return previewLines.map((l) => l.slice(0, maxLen)).join('\n');
+};
+
+export const useAppStore = create<AppState>((set, get) => ({
   image: null,
   imageData: null,
   asciiText: '',
@@ -38,6 +55,8 @@ export const useAppStore = create<AppState>((set) => ({
   status: 'idle',
   errorMessage: null,
   previewLines: [],
+  history: [],
+  activeHistoryId: null,
 
   setImage: (image) => set({ image }),
   setImageData: (imageData) => set({ imageData }),
@@ -50,6 +69,48 @@ export const useAppStore = create<AppState>((set) => ({
   setStatus: (status) => set({ status }),
   setErrorMessage: (errorMessage) => set({ errorMessage }),
   setPreviewLines: (previewLines) => set({ previewLines }),
+
+  addHistory: (item) => {
+    const state = get();
+    const newItem: HistoryItem = {
+      ...item,
+      id: generateId(),
+      timestamp: Date.now(),
+      thumbnail: generateThumbnail(item.previewLines),
+    };
+    const newHistory = [newItem, ...state.history].slice(0, MAX_HISTORY);
+    set({ history: newHistory, activeHistoryId: null });
+  },
+
+  selectHistory: (id) => {
+    if (id === null) {
+      set({ activeHistoryId: null });
+      return;
+    }
+    const state = get();
+    const item = state.history.find((h) => h.id === id);
+    if (item) {
+      set({
+        activeHistoryId: id,
+        asciiText: item.asciiText,
+        previewLines: item.previewLines,
+        settings: item.settings,
+        imageInfo: item.imageInfo,
+        status: 'ready',
+      });
+    }
+  },
+
+  deleteHistory: (id) => {
+    set((state) => {
+      const newHistory = state.history.filter((h) => h.id !== id);
+      const newActiveId = state.activeHistoryId === id ? null : state.activeHistoryId;
+      return { history: newHistory, activeHistoryId: newActiveId };
+    });
+  },
+
+  clearHistory: () => set({ history: [], activeHistoryId: null }),
+
   reset: () =>
     set({
       image: null,
@@ -59,5 +120,6 @@ export const useAppStore = create<AppState>((set) => ({
       status: 'idle',
       errorMessage: null,
       previewLines: [],
+      activeHistoryId: null,
     }),
 }));

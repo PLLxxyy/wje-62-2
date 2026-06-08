@@ -8,13 +8,16 @@ export const useAsciiGenerator = () => {
     imageData,
     imageInfo,
     settings,
+    activeHistoryId,
     setAsciiText,
     setPreviewLines,
     setStatus,
+    addHistory,
   } = useAppStore();
 
   const generateAscii = useCallback(() => {
     if (!imageData || !imageInfo) return;
+    if (activeHistoryId !== null) return;
 
     setStatus('processing');
 
@@ -29,22 +32,34 @@ export const useAsciiGenerator = () => {
       settings.invert
     );
 
+    const previewLines = text.split('\n');
     setAsciiText(text);
-    setPreviewLines(text.split('\n'));
+    setPreviewLines(previewLines);
     setStatus('ready');
+
+    addHistory({
+      asciiText: text,
+      previewLines,
+      settings: { ...settings },
+      imageInfo: { ...imageInfo },
+      thumbnail: '',
+    });
   }, [
     imageData,
     imageInfo,
     settings.charSet,
     settings.customChars,
     settings.invert,
+    settings,
+    activeHistoryId,
     setAsciiText,
     setPreviewLines,
     setStatus,
+    addHistory,
   ]);
 
   useEffect(() => {
-    if (imageData && imageInfo) {
+    if (imageData && imageInfo && activeHistoryId === null) {
       const debounce = setTimeout(() => {
         generateAscii();
       }, 50);
@@ -56,6 +71,7 @@ export const useAsciiGenerator = () => {
     settings.charSet,
     settings.customChars,
     settings.invert,
+    activeHistoryId,
     generateAscii,
   ]);
 

@@ -27,3 +27,13 @@ export interface ExportOptions {
   textColor: string;
   format: 'png' | 'jpeg';
 }
+
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  asciiText: string;
+  previewLines: string[];
+  settings: AppSettings;
+  imageInfo: ImageInfo | null;
+  thumbnail: string;
+}

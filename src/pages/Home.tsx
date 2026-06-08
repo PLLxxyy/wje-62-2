@@ -3,6 +3,7 @@ import { Printer, Cpu, Zap } from 'lucide-react';
 import { StatusIndicator } from '@/components/StatusIndicator';
 import { ImageUploader } from '@/components/ImageUploader';
 import { ControlPanel } from '@/components/ControlPanel';
+import { HistoryPanel } from '@/components/HistoryPanel';
 import { AsciiPreview } from '@/components/AsciiPreview';
 import { ActionButtons } from '@/components/ActionButtons';
 
@@ -71,6 +72,10 @@ const Home: React.FC = () => {
 
             <div className="bg-crt-bgDark border-2 border-crt-border rounded-xl p-5 shadow-lg">
               <ControlPanel />
+            </div>
+
+            <div className="bg-crt-bgDark border-2 border-crt-border rounded-xl p-5 shadow-lg">
+              <HistoryPanel />
             </div>
 
             <div className="bg-crt-bgDark border-2 border-crt-border rounded-xl p-5 shadow-lg">
